@@ -11,6 +11,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
@@ -30,4 +31,10 @@ class CabFacilityControllerTest {
         this.mockMvc.perform(put("/cab/register")).andExpect(status().isOk());
     }
 
+    @Test
+    public void shouldReturn404WhenCabsAreNotRegistered() throws Exception {
+        ResponseEntity response = new ResponseEntity(HttpStatus.BAD_REQUEST);
+        when(cabFacilityController.status()).thenReturn(response);
+        this.mockMvc.perform(get("/cab/status")).andExpect(status().isBadRequest());
+    }
 }

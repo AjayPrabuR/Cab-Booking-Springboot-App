@@ -2,7 +2,7 @@ package com.example.cabbooking.model;
 
 public class Cab {
     private int cabNumber;
-    private int time;
+    private int timeTaken;
     private Location pickupLocation = null;
     private Location destinationLocation = null;
     private boolean booked;
@@ -12,35 +12,23 @@ public class Cab {
         destinationLocation = new Location();
         this.cabNumber =cabNumber;
         booked = false;
-        time = 0;
+        timeTaken = 0;
     }
 
-    public int getId() {
+    public int getCabNumber() {
         return cabNumber;
     }
 
-    public void setId(int cabNumber) {
-        this.cabNumber =cabNumber;
+    public int gettimeTaken() {
+        return timeTaken;
     }
 
-    public int gettime() {
-        return time;
+    public void settimeTaken(int timeTaken) {
+        this.timeTaken = timeTaken;
     }
 
-    public void settime(int time) {
-        this.time = time;
-    }
-    
-    public Location getpickupLocation() {
-        return pickupLocation;
-    }
-
-    public void setpickupLocation(Location pickupLocation) {
+    public void setPickupLocation(Location pickupLocation) {
         this.pickupLocation = pickupLocation;
-    }
-
-    public Location getDestinationLocation() {
-        return destinationLocation;
     }
 
     public void setDestinationLocation(Location destinationLocation) {
@@ -57,12 +45,11 @@ public class Cab {
 
     @Override
     public String toString() {
-        return "Cab:{" +
+        return "Cab_" +
                 "id:" +cabNumber +
                  ", pickupLocation: {x:" + pickupLocation.getX() + ",y: " + pickupLocation.getY() + "}" +
                 ", destinationLocation: { x:" + destinationLocation.getX() + " , y:" + destinationLocation.getY() + "}" +
                 ", booked:" + booked +
-                ", bookedTime:" + time +
-                '}';
+                ", timeTaken:" + timeTaken;
     }
 }
