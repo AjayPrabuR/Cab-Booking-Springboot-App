@@ -1,72 +1,66 @@
 package com.example.cabbooking.controller;
 
+import com.example.cabbooking.dto.CabBookingRequest;
+import com.example.cabbooking.dto.CabRegistrationRequest;
 import com.example.cabbooking.model.Cab;
 import com.example.cabbooking.model.Location;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("cab")
 public class CabFacilityController {
-    private List<Cab> cabs ;
+    private Map<String, Cab> cabs;
+
     public CabFacilityController() {
-        this.cabs = new ArrayList<>();
+        this.cabs = new HashMap<>();
     }
 
-    private int getDistanceTravelled(Location pickupLocation, Location destinationLocation) {
-        int distanceTravelled = (int)Math.sqrt((destinationLocation.getX() - pickupLocation.getX()) * (destinationLocation.getX() - pickupLocation.getX())  +  (destinationLocation.getY() - pickupLocation.getY()) * (destinationLocation.getY() - pickupLocation.getY()));
-        return distanceTravelled;
+    private float getAbsoluteDistance(Location location1, Location location2) {
+        float absoluteDistance = (float) Math.sqrt((location2.getX() - location1.getX()) * (location2.getX() - location1.getX()) + (location2.getY() - location1.getY()) * (location2.getY() - location1.getY()));
+        return absoluteDistance;
     }
 
-    @PostMapping("/register/{cabType}")
-    public ResponseEntity register(@PathVariable String cabType) {
-        int cabRegisterNumber = cabs.size() + 1;
-        cabs.add(new Cab(cabRegisterNumber));
-       // System.out.print(cabType);
-        return ResponseEntity.ok(cabRegisterNumber);
+    @PostMapping("/register")
+    public ResponseEntity register(@RequestBody CabRegistrationRequest request) {
+        String cabRegistrationNumber = request.getCabRegistrationNumber();
+        if (cabs.containsKey(cabRegistrationNumber)) {
+            return ResponseEntity.ok("Cab already registered!!!");
+        }
+        Cab cab = new Cab(cabRegistrationNumber, request.getCabLocation(), request.getCabType());
+        cabs.put(cabRegistrationNumber, cab);
+        return ResponseEntity.ok("Cab registered successfully!!!");
     }
 
     @GetMapping("/status")
-    public ResponseEntity<String> status() {
-        StringBuilder buildResponse = new StringBuilder();
-        for (Cab cab : cabs) {
-            buildResponse.append(cab.toString()+"\n");
-        }
-        return new ResponseEntity(buildResponse.toString(), HttpStatus.OK);
+    public ResponseEntity<Object> status() {
+        return new ResponseEntity(cabs.values(), HttpStatus.OK);
     }
 
     @PutMapping("/book")
-    public ResponseEntity<String> book(@RequestBody Map<String, Location> booking) {
-        //System.out.print(">>>>>>"+cabs.size()+">>>>>>>\n");
-        Location customerPickupLocation = booking.get("pickupLocation");
-        Location customerDropLocation = booking.get("destinationLocation");
-        String bill= "";
-        int nextCabAvailable = -1;
-        for (int i = 0; i < cabs.size(); i++) {
-            if (!cabs.get(i).isBooked()) {
-                {
-                    nextCabAvailable = i;
-                    break;
+    public ResponseEntity<String> book(@RequestBody CabBookingRequest request) {
+        float minimumDistanceBetweenCabAndUser = Float.MAX_VALUE;
+        Cab bestMatchingCab = null;
+        for (String cabRegistrationNumber : cabs.keySet()) {
+            Cab cab = cabs.get(cabRegistrationNumber);
+            if (cab.getCabType().equals(request.getCabType()) && !cab.getAvailability()) {
+                float distanceBetweenCabAndUser = getAbsoluteDistance(request.getPickupLocation(), cab.getCabLocation());
+                if (distanceBetweenCabAndUser < minimumDistanceBetweenCabAndUser) {
+                    bestMatchingCab = cab;
+                    minimumDistanceBetweenCabAndUser = distanceBetweenCabAndUser;
                 }
             }
         }
 
 
-        if (nextCabAvailable != -1) {
-            cabs.get(nextCabAvailable).setBooked(true);
-            cabs.get(nextCabAvailable).settimeTaken(getDistanceTravelled(customerPickupLocation, customerDropLocation));
-            cabs.get(nextCabAvailable).setPickupLocation(customerPickupLocation);
-            cabs.get(nextCabAvailable).setDestinationLocation(customerDropLocation);
-            bill=  "Cab_number " + String.valueOf(cabs.get(nextCabAvailable).getCabNumber()) + ",\nTime Taken: " + String.valueOf(cabs.get(nextCabAvailable).gettimeTaken()) +  ",\nFair: " + cabs.get(nextCabAvailable).gettimeTaken() * 5  +"\n";
-            return new ResponseEntity(bill, HttpStatus.OK);
+        if (bestMatchingCab == null) {
+            return new ResponseEntity("No cab available at the moment", HttpStatus.NOT_FOUND);
         }
-
-        return new ResponseEntity(bill, HttpStatus.NOT_FOUND);
+        bestMatchingCab.book(request.getPickupLocation(), request.getDestinationLocation());
+        return ResponseEntity.ok("Booking Successful!!!");
     }
 
 }
